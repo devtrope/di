@@ -1,0 +1,15 @@
+{
+    "name": "devtrope/di",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Quentin SCHIFFERLE",
+            "email": "dev.trope@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "DI\\": "src/"
+        }
+    }
+}
