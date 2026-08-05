@@ -2,6 +2,8 @@
 
 namespace DI;
 
+use Exception;
+
 class Container
 {
     /**
@@ -18,6 +20,8 @@ class Container
      * @var array
      */
     private array $instantiated = [];
+
+    private array $building = [];
 
     /**
      * Registers a service definition
@@ -39,9 +43,22 @@ class Container
      */
     public function get(string $identifier): mixed
     {
+        if (false === isset($this->definitions[$identifier])) {
+            throw new Exception(
+                "The {$identifier} key does not exist"
+            );
+        }
+
         if (isset($this->instantiated[$identifier])) {
             return $this->instantiated[$identifier];
         }
+        
+        if (\in_array($identifier, $this->building)) {
+            throw new Exception(
+                "Circular dependency detected"
+            );
+        }
+        $this->building[] = $identifier;
 
         $instance = $this->definitions[$identifier]($this);
         $this->instantiated[$identifier] = $instance;
