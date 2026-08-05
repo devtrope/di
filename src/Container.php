@@ -14,13 +14,18 @@ class Container
     private array $definitions = [];
 
     /**
-     * Already instantiated services.
-     * Cached to avoid creating multiple instances of the same service.
+     * Already instantiated services
+     * Cached to avoid creating multiple instances of the same service
      *
      * @var array
      */
     private array $instantiated = [];
 
+    /**
+     * Services being built
+     *
+     * @var array
+     */
     private array $building = [];
 
     /**
@@ -53,14 +58,21 @@ class Container
             return $this->instantiated[$identifier];
         }
         
-        if (\in_array($identifier, $this->building)) {
+        if (isset($this->building[$identifier])) {
             throw new Exception(
                 "Circular dependency detected"
             );
         }
-        $this->building[] = $identifier;
+        $this->building[$identifier] = true;
 
-        $instance = $this->definitions[$identifier]($this);
+        try {
+            $instance = $this->definitions[$identifier]($this);
+        } catch (Exception $e) {
+            throw $e;
+        } finally {
+            unset($this->building[$identifier]);
+        }
+
         $this->instantiated[$identifier] = $instance;
         return $instance;
     }
