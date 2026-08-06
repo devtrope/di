@@ -7,7 +7,7 @@ class Application
     public function __construct(
         private Logger $logger,
         private CacheInterface $cache,
-        private string $applicationName
+        private string $applicationName = "Test"
     ) {}
 
     public function initialize(): string

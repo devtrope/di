@@ -4,6 +4,7 @@ namespace DI;
 
 use ReflectionClass;
 use ReflectionNamedType;
+use ReflectionParameter;
 
 class Container
 {
@@ -90,11 +91,21 @@ class Container
 
         $parameters = [];
         $dependencies = $this->resolveDependencies($identifier);
+        /**
+         * @var ReflectionParameter $dependency
+         */
         foreach ($dependencies as $dependency) {
+            // If there is a default value, we register it automatically
+            if ($dependency->isDefaultValueAvailable()) {
+                $parameters[] = $dependency->getDefaultValue();
+                continue;
+            }
+
             if (isset($this->bindings[$dependency->getName()])) {
                 $parameters[] = $this->bindings[$dependency->getName()];
                 continue;
             }
+
             /**
              * @var ReflectionNamedType $type
              */
@@ -140,7 +151,7 @@ class Container
                 $instances[] = $parameter;
                 continue;
             }
-            
+
             $instances[] = $this->instantiated[$parameter];
         }
 
