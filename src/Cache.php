@@ -2,7 +2,10 @@
 
 namespace DI;
 
-class Cache
+class Cache implements CacheInterface
 {
-
+    public function initialize(): string
+    {
+        return "CACHE::INITIALIZED";
+    }
 }

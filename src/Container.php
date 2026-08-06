@@ -2,7 +2,6 @@
 
 namespace DI;
 
-use Exception;
 use ReflectionClass;
 use ReflectionNamedType;
 
@@ -16,19 +15,19 @@ class Container
     private array $definitions = [];
 
     /**
+     * Registered service aliases
+     *
+     * @var array
+     */
+    private array $aliases = [];
+
+    /**
      * Already instantiated services
      * Cached to avoid creating multiple instances of the same service
      *
      * @var array
      */
     private array $instantiated = [];
-
-    /**
-     * Services being built
-     *
-     * @var array
-     */
-    private array $building = [];
 
     /**
      * Registers a service definition
@@ -43,6 +42,18 @@ class Container
     }
 
     /**
+     * Registers a service alias
+     *
+     * @param string $identifier
+     * @param string $alias
+     * @return void
+     */
+    public function alias(string $identifier, string $alias): void
+    {
+        $this->aliases[$identifier] = $alias;
+    }
+
+    /**
      * Returns the service associated with the given identifier
      *
      * @param string $identifier
@@ -52,6 +63,10 @@ class Container
     {
         if (isset($this->instantiated[$identifier])) {
             return $this->instantiated[$identifier];
+        }
+
+        if (isset($this->aliases[$identifier])) {
+            $identifier = $this->aliases[$identifier];
         }
 
         $parameters = [];
@@ -67,39 +82,7 @@ class Container
         }
 
         $this->instantiate($identifier, $parameters);
-
-        if (!isset($this->instantiated[$identifier])) {
-            $this->instantiated[$identifier] = new $identifier($this->instantiated[$name]);
-        }
         return $this->instantiated[$identifier];
-
-        /*if (false === isset($this->definitions[$identifier])) {
-            throw new Exception(
-                "The {$identifier} key does not exist"
-            );
-        }
-
-        if (isset($this->instantiated[$identifier])) {
-            return $this->instantiated[$identifier];
-        }
-        
-        if (isset($this->building[$identifier])) {
-            throw new Exception(
-                "Circular dependency detected"
-            );
-        }
-        $this->building[$identifier] = true;
-
-        try {
-            $instance = $this->definitions[$identifier]($this);
-        } catch (Exception $e) {
-            throw $e;
-        } finally {
-            unset($this->building[$identifier]);
-        }
-
-        $this->instantiated[$identifier] = $instance;
-        return $instance;*/
     }
 
     private function resolveDependencies(string $identifier): array
@@ -122,6 +105,9 @@ class Container
 
         $instances = [];
         foreach ($parameters as $parameter) {
+            if (isset($this->aliases[$parameter])) {
+                $parameter = $this->aliases[$parameter];
+            }
             $instances[] = $this->instantiated[$parameter];
         }
 
