@@ -3,6 +3,8 @@
 namespace DI;
 
 use Exception;
+use ReflectionClass;
+use ReflectionNamedType;
 
 class Container
 {
@@ -48,7 +50,31 @@ class Container
      */
     public function get(string $identifier): mixed
     {
-        if (false === isset($this->definitions[$identifier])) {
+        if (class_exists($identifier)) {
+            $reflectionClass = new ReflectionClass($identifier);
+            $constructor = $reflectionClass->getConstructor();
+            if (null === $constructor) {
+                $this->instantiated[$identifier] = new $identifier();
+            } else {
+                $parameters = $constructor->getParameters();
+                foreach ($parameters as $parameter) {
+                    /**
+                     * @var ReflectionNamedType $type
+                     */
+                    $type = $parameter->getType();
+                    $name = $type->getName();
+                    $this->building[$identifier] = true;
+                    $this->get($name);
+                }
+            }
+        }
+
+        if (!isset($this->instantiated[$identifier])) {
+            $this->instantiated[$identifier] = new $identifier($this->instantiated[$name]);
+        }
+        return $this->instantiated[$identifier];
+
+        /*if (false === isset($this->definitions[$identifier])) {
             throw new Exception(
                 "The {$identifier} key does not exist"
             );
@@ -74,6 +100,7 @@ class Container
         }
 
         $this->instantiated[$identifier] = $instance;
-        return $instance;
+        return $instance;*/
+        return true;
     }
 }
