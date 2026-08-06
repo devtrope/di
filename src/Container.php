@@ -22,6 +22,13 @@ class Container
     private array $aliases = [];
 
     /**
+     * Registered service bindings
+     *
+     * @var array
+     */
+    private array $bindings = [];
+
+    /**
      * Already instantiated services
      * Cached to avoid creating multiple instances of the same service
      *
@@ -54,6 +61,18 @@ class Container
     }
 
     /**
+     * Registers a service binding
+     *
+     * @param string $identifier
+     * @param mixed $bind
+     * @return void
+     */
+    public function bind(string $identifier, mixed $bind): void
+    {
+        $this->bindings[$identifier] = $bind;
+    }
+
+    /**
      * Returns the service associated with the given identifier
      *
      * @param string $identifier
@@ -70,12 +89,16 @@ class Container
         }
 
         $parameters = [];
-        $depencencies = $this->resolveDependencies($identifier);
-        foreach ($depencencies as $depencency) {
+        $dependencies = $this->resolveDependencies($identifier);
+        foreach ($dependencies as $dependency) {
+            if (isset($this->bindings[$dependency->getName()])) {
+                $parameters[] = $this->bindings[$dependency->getName()];
+                continue;
+            }
             /**
              * @var ReflectionNamedType $type
              */
-            $type = $depencency->getType();
+            $type = $dependency->getType();
             $parameter = $type->getName();
             $parameters[] = $parameter;
             $this->get($parameter);
@@ -87,6 +110,10 @@ class Container
 
     private function resolveDependencies(string $identifier): array
     {
+        if (false === class_exists($identifier)) {
+            return [];
+        }
+
         $reflectionClass = new ReflectionClass($identifier);
         $constructor = $reflectionClass->getConstructor();
         if (null === $constructor) {
@@ -108,6 +135,12 @@ class Container
             if (isset($this->aliases[$parameter])) {
                 $parameter = $this->aliases[$parameter];
             }
+
+            if (false === class_exists($parameter)) {
+                $instances[] = $parameter;
+                continue;
+            }
+            
             $instances[] = $this->instantiated[$parameter];
         }
 

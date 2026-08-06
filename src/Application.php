@@ -6,13 +6,14 @@ class Application
 {
     public function __construct(
         private Logger $logger,
-        private CacheInterface $cache
+        private CacheInterface $cache,
+        private string $applicationName
     ) {}
 
     public function initialize(): string
     {
         $this->logger->write('./debug.log');
-        $string = "The application has been initialized.";
+        $string = "The application {$this->applicationName} has been initialized.";
         $string .= "\n" . $this->cache->initialize();
         return $string;
     }
