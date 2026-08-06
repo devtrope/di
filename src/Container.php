@@ -50,24 +50,22 @@ class Container
      */
     public function get(string $identifier): mixed
     {
-        if (class_exists($identifier)) {
-            $reflectionClass = new ReflectionClass($identifier);
-            $constructor = $reflectionClass->getConstructor();
-            if (null === $constructor) {
-                $this->instantiated[$identifier] = new $identifier();
-            } else {
-                $parameters = $constructor->getParameters();
-                foreach ($parameters as $parameter) {
-                    /**
-                     * @var ReflectionNamedType $type
-                     */
-                    $type = $parameter->getType();
-                    $name = $type->getName();
-                    $this->building[$identifier] = true;
-                    $this->get($name);
-                }
-            }
+        if (isset($this->instantiated[$identifier])) {
+            return $this->instantiated[$identifier];
         }
+
+        $name = null;
+        $depencencies = $this->resolveDependencies($identifier);
+        foreach ($depencencies as $depencency) {
+            /**
+             * @var ReflectionNamedType $type
+             */
+            $type = $depencency->getType();
+            $name = $type->getName();
+            $this->get($name);
+        }
+
+        $this->instantiate($identifier, $name);
 
         if (!isset($this->instantiated[$identifier])) {
             $this->instantiated[$identifier] = new $identifier($this->instantiated[$name]);
@@ -101,6 +99,26 @@ class Container
 
         $this->instantiated[$identifier] = $instance;
         return $instance;*/
-        return true;
+    }
+
+    private function resolveDependencies(string $identifier): array
+    {
+        $reflectionClass = new ReflectionClass($identifier);
+        $constructor = $reflectionClass->getConstructor();
+        if (null === $constructor) {
+            return [];
+        }
+
+        return $constructor->getParameters();
+    }
+
+    private function instantiate(string $identifier, string|null $parameter): void
+    {
+        if (null === $parameter) {
+            $this->instantiated[$identifier] = new $identifier();
+            return;
+        }
+
+        $this->instantiated[$identifier] = new $identifier($this->instantiated[$parameter]);
     }
 }
