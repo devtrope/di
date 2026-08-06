@@ -4,8 +4,10 @@ namespace DI;
 
 class Application
 {
-    public function __construct(private Logger $logger)
-    {}
+    public function __construct(
+        private Logger $logger,
+        private Cache $cache
+    ) {}
 
     public function initialize(): string
     {

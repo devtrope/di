@@ -54,18 +54,19 @@ class Container
             return $this->instantiated[$identifier];
         }
 
-        $name = null;
+        $parameters = [];
         $depencencies = $this->resolveDependencies($identifier);
         foreach ($depencencies as $depencency) {
             /**
              * @var ReflectionNamedType $type
              */
             $type = $depencency->getType();
-            $name = $type->getName();
-            $this->get($name);
+            $parameter = $type->getName();
+            $parameters[] = $parameter;
+            $this->get($parameter);
         }
 
-        $this->instantiate($identifier, $name);
+        $this->instantiate($identifier, $parameters);
 
         if (!isset($this->instantiated[$identifier])) {
             $this->instantiated[$identifier] = new $identifier($this->instantiated[$name]);
@@ -112,13 +113,18 @@ class Container
         return $constructor->getParameters();
     }
 
-    private function instantiate(string $identifier, string|null $parameter): void
+    private function instantiate(string $identifier, array $parameters): void
     {
-        if (null === $parameter) {
+        if (empty($parameters)) {
             $this->instantiated[$identifier] = new $identifier();
             return;
         }
 
-        $this->instantiated[$identifier] = new $identifier($this->instantiated[$parameter]);
+        $instances = [];
+        foreach ($parameters as $parameter) {
+            $instances[] = $this->instantiated[$parameter];
+        }
+
+        $this->instantiated[$identifier] = new $identifier(...$instances);
     }
 }
