@@ -2,19 +2,13 @@
 
 namespace DI;
 
+use Exception;
 use ReflectionClass;
 use ReflectionNamedType;
 use ReflectionParameter;
 
 class Container
 {
-    /**
-     * Registered service definitions
-     *
-     * @var array
-     */
-    private array $definitions = [];
-
     /**
      * Registered service aliases
      *
@@ -36,42 +30,6 @@ class Container
      * @var array
      */
     private array $instantiated = [];
-
-    /**
-     * Registers a service definition
-     *
-     * @param string $identifier
-     * @param callable $factory
-     * @return void
-     */
-    public function register(string $identifier, callable $factory): void
-    {
-        $this->definitions[$identifier] = $factory;
-    }
-
-    /**
-     * Registers a service alias
-     *
-     * @param string $identifier
-     * @param string $alias
-     * @return void
-     */
-    public function alias(string $identifier, string $alias): void
-    {
-        $this->aliases[$identifier] = $alias;
-    }
-
-    /**
-     * Registers a service binding
-     *
-     * @param string $identifier
-     * @param mixed $bind
-     * @return void
-     */
-    public function bind(string $identifier, mixed $bind): void
-    {
-        $this->bindings[$identifier] = $bind;
-    }
 
     /**
      * Returns the service associated with the given identifier
@@ -117,6 +75,24 @@ class Container
 
         $this->instantiate($identifier, $parameters);
         return $this->instantiated[$identifier];
+    }
+
+    public function load(string $configurationFile): void
+    {
+        if (false === is_readable($configurationFile)) {
+            throw new Exception(
+                "The configuration file {$configurationFile} is not readable"
+            );
+        }
+
+        $configuration = require $configurationFile;
+        foreach ($configuration as $key => $values) {
+            foreach ($values as $valuesKey => $value) {
+                if ('alias' === $valuesKey) {
+                    $this->aliases[$key] = $value;
+                }
+            }
+        }
     }
 
     private function resolveDependencies(string $identifier): array
